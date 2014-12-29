@@ -1,4 +1,4 @@
-#!/bin/python2
+#!/usr/bin/python2
 
 import sys
 import random
@@ -6,12 +6,10 @@ import mmap
 import shutil
 import os
 import hashlib
-import argparse
-
-from pydbg import *
-from pydbg.defines import *
-import utils
 import os.path
+
+import vtrace
+import vdb
 
 
 """ Randomly replaces bytes in the file"""
@@ -20,7 +18,7 @@ import os.path
 def bytefiddle(parent_file):
     sz = os.path.getsize(parent_file)
     offset = [random.randint(10, sz-1) for i in range(int(0.1 * sz))]
-    print "offset len: %s" % len(offset)
+    print("offset len: %s" % len(offset))
     name, ext = os.path.splitext(parent_file)
     mutf = hashlib.sha1(str(random.random())).hexdigest() + ext
     shutil.copy(parent_file, mutf)
@@ -35,36 +33,34 @@ def bytefiddle(parent_file):
         mm.close()
     return mutf
 
+
+def load_binary(trace, exepath, filepath):
+    # If attempting to attach to a 64 bit process
+    # 64 bit python is required.
+    # sample cmdline: C:\Program Files (x86)\Internet Explorer\iexplore.exe C:\test\ie\index_0.html
+    cmdline = exepath + " " + filepath
+    trace.execute(cmdline)
+
+    print("Executing: %s") % (cmdline)
+    # Start the program executing
+    trace.run()
+
 def check_accessv(dbg):
-    crash_bin = utils.crash_binning.crash_binning()
-    crash_bin.record_crash(dbg)
-    print crash_bin.crash_synopsis()
-    input()
-    return DBG_EXCEPTION_NOT_HANDLED
+    return
 
 
 def main():
-    print("[+] dreifuzz says Hallo!")
+    if len(sys.argv) < 3:
+        print("dreifuzz -- a effortlessly uncomplicated fuzzer\n"
+                "usage: ./dreifuzz.py [executable] [file]")
+        return
 
-    app = sys.argv[-1]
-    print("[+] File fuzzing program %s" % app)
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-d', store='indir', help='directory containing files to fuzz')
-    args = parser.parse_args()
+    exepath = sys.argv[1]
+    filepath = sys.argv[2]
 
-    for root, dirs, filenames in os.walk(indir):
-        for f in filenames:
-        	log = open(os.path.join(root, f),'r')
-		print("[+] Mutating file %s" % f)
-		dbg = pydbg()
+    trace = vtrace.getTrace()
 
-		mutated_file = bytefiddle(f)
-		print("[+] Mutated file: %s" % mutated_file)
-
-		dbg.load(app, mutated_file)
-		dbg.set_callback(EXCEPTION_ACCESS_VIOLATION, check_accessv)
-
-		dbg.run()
+    load_binary(trace, exepath, filepath)
 
 if __name__ == "__main__":
     sys.exit(main())
