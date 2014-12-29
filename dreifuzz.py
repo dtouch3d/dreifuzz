@@ -8,6 +8,8 @@ import os
 import hashlib
 import os.path
 
+sys.path.append("./vivisect")
+
 import vtrace
 import vdb
 
