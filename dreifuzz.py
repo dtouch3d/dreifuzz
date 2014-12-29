@@ -37,14 +37,10 @@ def bytefiddle(parent_file):
 
 
 def load_binary(trace, exepath, filepath):
-    # If attempting to attach to a 64 bit process
-    # 64 bit python is required.
-    # sample cmdline: C:\Program Files (x86)\Internet Explorer\iexplore.exe C:\test\ie\index_0.html
     cmdline = exepath + " " + filepath
     trace.execute(cmdline)
 
     print("Executing: %s") % (cmdline)
-    # Start the program executing
     trace.run()
 
 def check_accessv(dbg):
